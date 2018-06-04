@@ -39,9 +39,10 @@ if not l:
     IMG_NUM = 1
     IMG_NUM_INIT = IMG_NUM
 else:
-    print(l)
+    # print(l)
     l.sort(key = file_num)
-    print(l)
+    # print(l)
+    print(l[-1])
     last_file_name = l[-1]
     last_image_num = int(last_file_name[0:-4])
     IMG_NUM = last_image_num + 1

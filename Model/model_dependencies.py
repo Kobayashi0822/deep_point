@@ -5,8 +5,40 @@ import cv2
 import time
 from math import floor
 
-def get_placeholders(n_H0 = 341, n_W0 = 426, n_C0 = 1, n_y = 6):
-	"""
+def variable_summaries(var):
+	"""Attach different summaries to a Tensor (for TensorBoard visualization)."""
+	
+	with tf.name_scope('summaries'):
+		mean = tf.reduce_mean(var)
+		tf.summary.scalar('mean', mean)
+		with tf.name_scope('stddev'):
+			stddev = tf.sqrt(tf.reduce_mean(tf.square(var - mean)))
+    	tf.summary.scalar('stddev', stddev)
+	    tf.summary.histogram('histogram', var)
+
+def log_all_var():
+	"""To attach variables to the TensorBoard summary all at once."""
+	variable_summaries(tf.get_variable('W11:0'))
+	variable_summaries(tf.get_variable('W12:0'))
+	variable_summaries(tf.get_variable('W21:0'))
+	variable_summaries(tf.get_variable('W22:0'))
+	variable_summaries(tf.get_variable('Z11_BN/gamma:0'))
+	variable_summaries(tf.get_variable('Z11_BN/beta:0'))
+	variable_summaries(tf.get_variable('Z12_BN/gamma:0'))
+	variable_summaries(tf.get_variable('Z12_BN/beta:0'))
+	variable_summaries(tf.get_variable('Z21_BN/gamma:0'))
+	variable_summaries(tf.get_variable('Z21_BN/beta:0'))
+	variable_summaries(tf.get_variable('Z22_BN/gamma:0'))
+	variable_summaries(tf.get_variable('Z22_BN/beta:0'))
+	variable_summaries(tf.get_variable('FC_1-4096/kernel:0'))
+	variable_summaries(tf.get_variable('FC_1-4096/bias:0'))
+	variable_summaries(tf.get_variable('FC_2-512/kernel:0'))
+	variable_summaries(tf.get_variable('FC_2-512/bias:0'))
+	variable_summaries(tf.get_variable('FC_3-n_y/kernel:0'))
+	variable_summaries(tf.get_variable('FC_3-n_y/bias:0'))
+
+def get_placeholders(n_H0 = 170, n_W0 = 213, n_C0 = 3, n_y = 6): # Changed n_C0 to 3 (color images) (initially was 1)
+	""" 
 	Inpus (Params):
 		n_H - image height (in px) (defaults to 341)
 		n_W - image width (in px) (defaults to 426)
@@ -22,7 +54,7 @@ def get_placeholders(n_H0 = 341, n_W0 = 426, n_C0 = 1, n_y = 6):
 
 	return X, y
 
-def init_params(n_H0 = 341, n_W0 = 426, n_C0 = 1, n_y = 6, check = False):
+def init_params(n_H0 = 170, n_W0 = 213, n_C0 = 3, n_y = 6, check = False): # Changed n_C0 to 3 (color images) (initially was 1)
 	"""
 	Inpus (Params):
 		n_H - image height (in px) (defaults to 341)
@@ -45,6 +77,8 @@ def init_params(n_H0 = 341, n_W0 = 426, n_C0 = 1, n_y = 6, check = False):
 		shape = [f11, f11, n_C0, n_C11],
 		initializer = tf.glorot_uniform_initializer(),
 		name = "W11")
+	# variable_summaries(W11) # For tensorboard logging.
+
 	n_H11 = floor((n_H0 + 2 * p11 - f11) / s11) + 1 # 170
 	n_W11 = floor((n_W0 + 2 * p11 - f11) / s11) + 1 # 212
 	if check:
@@ -59,7 +93,8 @@ def init_params(n_H0 = 341, n_W0 = 426, n_C0 = 1, n_y = 6, check = False):
 		shape = [f12, f12, n_C11, n_C12],
 		initializer = tf.glorot_uniform_initializer(),
 		name = "W12")
-	
+	# variable_summaries(W12) # For tensorboard logging.
+
 	n_H12 = floor((n_H11 + 2 * p12 - f12) / s12) + 1 # 84
 	n_W12 = floor((n_W11 + 2 * p12 - f12) / s12) + 1 # 105
 	if check:
@@ -83,6 +118,7 @@ def init_params(n_H0 = 341, n_W0 = 426, n_C0 = 1, n_y = 6, check = False):
 		shape = [f21, f21, n_C12, n_C21],
 		initializer = tf.glorot_uniform_initializer(),
 		name = 'W21')
+	# variable_summaries(W21) # For tensorboard logging.
 	
 	n_H21 = floor((n_H12 + 2 * p21 - f21) / s21) + 1 # 42
 	n_W21 = floor((n_W12 + 2 * p21 - f21) / s21) + 1 # 52
@@ -98,6 +134,7 @@ def init_params(n_H0 = 341, n_W0 = 426, n_C0 = 1, n_y = 6, check = False):
 		shape = [f22, f22, n_C21, n_C22],
 		initializer = tf.glorot_uniform_initializer(),
 		name = 'W22')
+	# variable_summaries(W22) # For tensorboard logging.
 	
 	n_H22 = floor((n_H21 + 2 * p22 - f22) / s22) + 1 # 42
 	n_W22 = floor((n_W21 + 2 * p22 - f22) / s22) + 1 # 52
@@ -131,19 +168,6 @@ def init_params(n_H0 = 341, n_W0 = 426, n_C0 = 1, n_y = 6, check = False):
 
 	return params, hparams
 
-params, hparams = init_params()
-W11 = params["W11"]
-W12 = params["W12"]
-W21 = params["W21"]
-W22 = params["W22"]
-
-s11, p11 = hparams["CONV_11"]
-s12, p12 = hparams["CONV_12"]
-f_p1, s_p1, p_p1 = hparams["POOL_1"]
-s21, p21 = hparams["CONV_21"]
-s22, p22 = hparams["CONV_22"]
-f_p2, s_p2, p_p2 = hparams["POOL_2"]
-
 def normalize_input(tensor):
 	"""
 	Input (params):
@@ -154,7 +178,7 @@ def normalize_input(tensor):
 	"""
 	return tf.divide(tensor, 255.)
 
-def forward_prop(X, n_y = 6, training = True): # Use of 'training' parameter will be made when implementing batch_norm using the layers API.
+def forward_prop(X, n_y = 6, training = False): # Use of 'training' parameter will be made when implementing batch_norm using the layers API.
 	"""
 	Inputs (params):
 	X - The tensorflow input placeholder of appropriate shape. See docstring for 'get_placeholders'.
@@ -172,7 +196,8 @@ def forward_prop(X, n_y = 6, training = True): # Use of 'training' parameter wil
 		data_format = "NHWC",
 		name = "Z11")
 	# Insert BN layer here.
-	A11 = tf.nn.relu(Z11, name = "A11")
+	# Z11_BN = tf.layers.batch_normalization(inputs = Z11, axis = 3, training = training, name = "Z11_BN")
+	A11 = tf.nn.relu(Z11, name = "A11") # _BN, name = "A11")
 
 	# conv11 = tf.layers.conv2d(inputs = X,
 	# 	filters = 64,
@@ -190,7 +215,8 @@ def forward_prop(X, n_y = 6, training = True): # Use of 'training' parameter wil
 		data_format = "NHWC",
 		name = "Z12")
 	# Insert BN layer here.
-	A12 = tf.nn.relu(Z12, name = "A12")
+	# Z12_BN = tf.layers.batch_normalization(inputs = Z12, axis = 3, training = training, name = "Z12_BN")
+	A12 = tf.nn.relu(Z12, name = "A12") # _BN, name = "A12")
 
 	# conv12 = tf.layers.conv2d(inputs = conv11,
 	# 	filters = 128,
@@ -222,7 +248,8 @@ def forward_prop(X, n_y = 6, training = True): # Use of 'training' parameter wil
 		data_format = "NHWC",
 		name = "Z21")
 	# Insert BN layer here.
-	A21 = tf.nn.relu(Z21, name = "A21")
+	# Z21_BN = tf.layers.batch_normalization(inputs = Z21, axis = 3, training = training, name = "Z21_BN")
+	A21 = tf.nn.relu(Z21, name = "A21") # _BN, name = "A21")
 
 	# conv21 = tf.layers.conv2d(inputs = pool1,
 	# 	filters = 128,
@@ -240,7 +267,8 @@ def forward_prop(X, n_y = 6, training = True): # Use of 'training' parameter wil
 		data_format = "NHWC",
 		name = "Z22")
 	# Insert BN layer here.
-	A22 = tf.nn.relu(Z22, name = "A22")
+	# Z22_BN = tf.layers.batch_normalization(inputs = Z22, axis = 3, training = training, name = "Z22_BN")
+	A22 = tf.nn.relu(Z22, name = "A22") # _BN, name = "A22")
 
 	# conv22 = tf.layers.conv2d(inputs = conv21,
 	# 	filters = 256,
@@ -268,127 +296,36 @@ def forward_prop(X, n_y = 6, training = True): # Use of 'training' parameter wil
 	fc_input = tf.layers.flatten(inputs = P2,
 		name = "FLATTEN")
 
-	assert(fc_input.shape[1] == 21 * 26 * 256)
+	# assert(fc_input.shape[1] == 21 * 26 * 256)
 
 	fc1 = tf.layers.dense(inputs = fc_input,
-		units = 256, # ORIGIALLY 4096, REDUCED DUE TO OOM ResourceExhaustError.
+		units = 1024, # ORIGIALLY 4096, REDUCED DUE TO OOM ResourceExhaustError.
 		activation = tf.nn.relu,
 		name = "FC_1-4096")
+	fc1_drop = tf.layers.dropout(inputs = fc1, rate = 0.0, training = training, name = "fc1_drop")
 
-	fc2 = tf.layers.dense(inputs = fc1,
-		units = 512,
+	fc2 = tf.layers.dense(inputs = fc1_drop,
+		units = 4096,
 		activation = tf.nn.relu,
 		name = "FC_2-512")
-	fc3 = tf.layers.dense(inputs = fc2,
+	fc2_drop = tf.layers.dropout(inputs = fc2, rate = 0.0, training = training, name = "fc2_drop")
+
+	fc3 = tf.layers.dense(inputs = fc2_drop,
 		units = n_y,
 		activation = None, # activation = None implies a linear activation.
 		name = "FC_3-n_y")
 
 	return fc3
 
+def custom_loss(pred, y, k = 0.85): # Remember to change k to 0.85 because the unit used is metres and not centimetres.
+	x1_p, y1_p, z1_p, x2_p, y2_p, z2_p = tf.split(pred, num_or_size_splits = 6, axis = 1)
+	x1_y, y1_y, z1_y, x2_y, y2_y, z2_y = tf.split(y, num_or_size_splits = 6, axis = 1)
 
+	x_p = ((-1 * (y1_p + k) * (x2_p - x1_p)) / (y2_p - y1_p)) + x1_p
+	z_p = ((-1 * (y1_p + k) * (z2_p - z1_p)) / (y2_p - y1_p)) + z1_p
 
-def model(minibatch_size = 32, num_epochs = 8, learning_rate = 0.001, mode = "TRAIN"):
+	x_y = ((-1 * (y1_y + k) * (x2_y - x1_y)) / (y2_y - y1_y)) + x1_y
+	z_y = ((-1 * (y1_y + k) * (z2_y - z1_y)) / (y2_y - y1_y)) + z1_y
 
-	X, y = get_placeholders() # Include input parameters in the function call for different input dims.
+	return tf.reduce_mean(tf.add(tf.square(tf.subtract(x_p, x_y)), tf.square(tf.subtract(z_p, z_y))))
 
-	predictions = forward_prop(X)
-
-	# loss = custom_loss_placeholder_function()
-
-	loss = tf.losses.mean_squared_error(labels = y, predictions = predictions)
-
-	optimizer = tf.train.AdamOptimizer(learning_rate = learning_rate).minimize(loss)
-
-	init = tf.global_variables_initializer()
-
-	# Saver init goes here.
-
-	batch_gen = BatchLoader(batch_size = 2048,
-			minibatch_size = minibatch_size,
-			num_data_points = 22528,
-			cwd = "./",
-			image_folder_relative = "IMAGE_DATA_2",
-			ew_file = "_elbow_wrist.txt",
-			wh_file = "_wrist_hand.txt")
-
-	if mode == "TRAIN":
-		loss_val = 0
-		with tf.Session() as sess:
-			sess.run(init)
-			# saver.restore(...)
-			printed_once = False
-			batch_ctr = 0
-			while batch_gen.epochs_passed != num_epochs:
-				X_buffer, y_buffer = batch_gen.get_next_batch()
-				m_batch = X_buffer.shape[0]
-				num_slices = m_batch // minibatch_size
-				# if m_batch / minibatch_size == num_slices:
-				# 	for i in range(num_slices):
-				# 		start = i * minibatch_size
-				# 		end = start + minibatch_size
-				# 		X = X_buffer[start:end]
-				# 		y = y_buffer[start:end]
-				batch_loss = 0
-				tick = time.time()
-				for i in range(num_slices): # *IMPORTANT* - THIS WILL NEGLECT THE LAST 'NUM_DATA_POINT % MINIBATCH_SIZE' EXAMPLES.
-					start = i * minibatch_size
-					end = start + minibatch_size
-					X_mb = X_buffer[start:end]
-					y_mb = y_buffer[start:end]
-					_, loss_val = sess.run([optimizer, loss], feed_dict = {X:X_mb, y:y_mb})
-					batch_loss += (loss_val / num_slices)
-				tock = time.time()
-
-				# Code for printing out the correct zero-indexed batch number just processed.
-				if batch_gen.current_batch != 0:
-					batch_ctr = batch_gen.current_batch - 1
-				else:
-					batch_ctr = 10
-
-				# Code for printing current satus of training incl. averaged batch loss, current batch passed, number of epochs passed.
-				# if (batch_gen.current_batch == 0) and (batch_gen.epochs_passed % 1 == 0):
-
-				# 	print("Epochs passed: " + str(batch_gen.epochs_passed) + "   |   Batch Processed: " + str(batch_ctr))
-				# 	print("LOSS: " + batch_loss)
-				print("Epochs passed: " + str(batch_gen.epochs_passed) + " | Batch processed: " + str(batch_ctr) + " | Batch train time: " + str(tock - tick) + " sec." + " | Loss: " + str(batch_loss))
-				
-				# print("Loss: " + batch_loss)				
-
-				
-	if mode == "VALIDATE":
-		loss_val = 0
-		validation_batch_loss = 0
-		with tf.Session() as sess:
-			sess.run(init)
-			"""****************BEGIN HERE ON 18th June 2018****************"""
-			X_val, y_val = batch_gen.get_validation_batch(remove_stray = True) # Remember to change this function's implementation to use unseen examples for validation
-			print(X_val.shape[0], y_val.shape[0])
-			assert(X_val.shape[0] == y_val.shape[0])
-			m_val_batch = X_val.shape[0]
-			num_slices = m_val_batch // minibatch_size
-			print(batch_gen.total_num_data_points, batch_gen.num_data_points)
-			print(num_slices, m_val_batch / minibatch_size)
-			assert(num_slices == m_val_batch / minibatch_size) # Just to check/prevent the presence of stray images.
-			tick = time.time()
-			for i in range(num_slices): # *IMPORTANT* - THIS WILL NEGLECT THE LAST 'NUM_DATA_POINT % MINIBATCH_SIZE' EXAMPLES.
-				start = i * minibatch_size
-				end = start + minibatch_size
-				X_mb = X_val[start:end]
-				y_mb = y_val[start:end]
-				loss_val = sess.run(loss, feed_dict = {X:X_mb, y:y_mb})
-				validation_batch_loss += (loss_val / num_slices)
-			tock = time.time()
-			print("Validation batch size: " + str(m_val_batch) + " | Validation forward propagation time: " + str(tock - tick) + " sec." + " | Loss: " + str(validation_batch_loss))
-
-
-
-
-	pass
-
-def main():
-	# model(minibatch_size = 8, num_epochs = 8, learning_rate = 0.001, mode = "TRAIN")
-	model(minibatch_size = 8, num_epochs = 8, learning_rate = 0.001, mode = "VALIDATE")
-
-if __name__ == '__main__':
-	main()

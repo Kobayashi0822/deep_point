@@ -1,3 +1,8 @@
+"""
+This script automates the process of augmentation of the captured data points.
+Use 'python augment.py --help' from the command line to know about the usage.
+"""
+
 import numpy as np
 import cv2
 import argparse
@@ -12,14 +17,14 @@ args = parser.parse_args()
 
 assert(not (args.mirror and args.check))
 
-ew_source = "D:/PRE_PROCESSED_DATA/_elbow_wrist.txt"
-wh_source = "D:/PRE_PROCESSED_DATA/_wrist_hand.txt"
-ew_dest = "D:/PRE_PROCESSED_DATA/MIRROR_TEST"
-wh_dest = "D:/PRE_PROCESSED_DATA/MIRROR_TEST"
+ew_source = "D:/CURRENT_WORKING_DIRECTORY/_elbow_wrist.txt"
+wh_source = "D:/CURRENT_WORKING_DIRECTORY/_wrist_hand.txt"
+ew_dest = "D:/CURRENT_WORKING_DIRECTORY/MIRROR_TEST"
+wh_dest = "D:/CURRENT_WORKING_DIRECTORY/MIRROR_TEST"
 
 if args.check:
-	ew_source = "D:/PRE_PROCESSED_DATA/MIRROR_TEST/_elbow_wrist.txt"
-	wh_source = "D:/PRE_PROCESSED_DATA/MIRROR_TEST/_wrist_hand.txt"
+	ew_source = "D:/CURRENT_WORKING_DIRECTORY/MIRROR_TEST/_elbow_wrist.txt"
+	wh_source = "D:/CURRENT_WORKING_DIRECTORY/MIRROR_TEST/_wrist_hand.txt"
 
 ew_num = np.loadtxt(ew_source,  dtype = int, usecols = (0,))
 wh_num = np.loadtxt(wh_source,  dtype = int, usecols = (0,))
@@ -30,9 +35,9 @@ wh_max = wh_num.shape[0]
 ew_max = ew_num.shape[0]
 assert(wh_max == ew_max)
 
-img_source = img_dest = "D:/PRE_PROCESSED_DATA/MIRROR_TEST/IMAGE_DATA_2/"
+img_source = img_dest = "D:/CURRENT_WORKING_DIRECTORY/MIRROR_TEST/IMAGE_DATA_2/"
 
-l = os.listdir("D:/PRE_PROCESSED_DATA/MIRROR_TEST/IMAGE_DATA_2/")
+l = os.listdir("D:/CURRENT_WORKING_DIRECTORY/MIRROR_TEST/IMAGE_DATA_2/")
 assert(len(l) == 24084)
 
 def file_num(file_name):

@@ -1,3 +1,10 @@
+"""
+This script requires a working instance of a Kinect v1 sensor connected to the machine with Microsoft Kinect for Windows SDK v1.8 installed.
+This is the high resolution version (1280 x 1024) of the data collection script and captures one labelled data point every two seconds (This is changeable).
+For samples images throwing light on what the script does and how the script captures labelled data points for finger pointing direction estimation, please see the images present in the directory.
+This script runs using the Pykinect wrapper for python around Microsoft Kinect for Windows SDK v1.8 and will require Pyhton 2.x
+"""
+
 import thread
 import itertools
 import ctypes
@@ -15,7 +22,7 @@ import cv2
 import time
 import os
 
-video = 0 #!!!!!!!!!!!!!!!!!!!!!!!
+video = 0
 
 KINECTEVENT = pygame.USEREVENT
 DEPTH_WINSIZE = 320,240
@@ -107,31 +114,20 @@ def nearer_hand_id(left_hand_distance, right_hand_distance):
 
 def draw_skeleton_data(pSkelton, index, positions, width = 4):
 
-    global video #!!!!!!!!!!!!!!!!!!!!!!!
+    global video
     start = pSkelton.SkeletonPositions[positions[0]]
     start_index = positions[0]
 
-
-    # print('--------------------------------------------') #!!!!!!!!!!!!!!!!!!!!!!!!----------------------
-    #+++++++++++++++++++++++++++++++++++++++++++++++START_HERE+++++++++++++++++++++++++++++++++++++++++++
     nearer_hand = nearer_hand_id(pSkelton.SkeletonPositions[JointId.HandLeft].z, pSkelton.SkeletonPositions[JointId.HandRight].z)
 
 
     for position in itertools.islice(positions, 1, None):
-        # print('$$$$$$$$$$$$$$$$')
-        # print(position.value)
-        # print('$$$$$$$$$$$$$$$$')
+        
         next = pSkelton.SkeletonPositions[position.value]
         next_index = position.value
-        # print(type(next.z))
-        # print(next) #!!!!!!!!!!!!!!!!!!!!!!!!----------------------
         
-        # curstart = skeleton_to_depth_image(start, dispInfo.current_w, dispInfo.current_h) #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        # curend = skeleton_to_depth_image(next, dispInfo.current_w, dispInfo.current_h) #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        curstart = skeleton_to_depth_image(start, 1280, 1024) #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        curend = skeleton_to_depth_image(next, 1280, 1024) #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        # print(curstart)
-        # print(type(curstart[0]))
+        curstart = skeleton_to_depth_image(start, 1280, 1024)
+        curend = skeleton_to_depth_image(next, 1280, 1024)
 
         curstart = (int(curstart[0]), int(curstart[1]))
         curend = (int(curend[0]), int(curend[1]))
@@ -151,11 +147,6 @@ def draw_skeleton_data(pSkelton, index, positions, width = 4):
                 cv2.line(video, curstart, curend, SKELETON_COLORS[0], 3)
             else:
                 cv2.line(video, curstart, curend, SKELETON_COLORS[1], 3)
-
-
-        # cv2.line(video, curstart, curend, SKELETON_COLORS[index], 3) #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-        # pygame.draw.line(screen, SKELETON_COLORS[index], curstart, curend, width) !!!!!!!!!!!!!!!!!
         
         start = next
         start_index = next_index
@@ -198,20 +189,16 @@ def surface_to_array(surface):
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
 def draw_skeletons(skeletons):
-    global video #!!!!!!!!!!!!!!!!!!!!!!!
+    global video
     for index, data in enumerate(skeletons):
-        # draw the Head
-        # HeadPos = skeleton_to_depth_image(data.SkeletonPositions[JointId.Head], dispInfo.current_w, dispInfo.current_h) #!!!!!!!!!!!!!!
-        HeadPos = skeleton_to_depth_image(data.SkeletonPositions[JointId.Head], 1280, 1024) #!!!!!!!!!!!!!!
+        HeadPos = skeleton_to_depth_image(data.SkeletonPositions[JointId.Head], 1280, 1024)
         if HeadPos[0] == 0 and HeadPos[1] == 0:
-            # print("--notTracked")
             continue
         draw_skeleton_data(data, index, SPINE, 10)
-        cv2.circle(video, (int(HeadPos[0]), int(HeadPos[1])), 20, SKELETON_COLORS[1], -1) #!!!!!!!!!!!
-        # pygame.draw.circle(screen, SKELETON_COLORS[index], (int(HeadPos[0]), int(HeadPos[1])), 20, 0) #!!!!!!!!!!!!
+        cv2.circle(video, (int(HeadPos[0]), int(HeadPos[1])), 20, SKELETON_COLORS[1], -1)
     
-        # drawing the limbs
-        draw_skeleton_data(data, index, LEFT_ARM)
+        # Drawing the limbs.
+        Draw_skeleton_data(data, index, LEFT_ARM)
         draw_skeleton_data(data, index, RIGHT_ARM)
         draw_skeleton_data(data, index, LEFT_LEG)
         draw_skeleton_data(data, index, RIGHT_LEG)
@@ -245,28 +232,19 @@ def video_frame_ready(frame):
     global FLAG
     global IMG_NUM
     # print "vFrame"
-    global video #!!!!!!!!!!!!!!!!!!!!!!!
+    global video
     if not video_display:
         return
-    #!!!!!!!!!!!!!!!!!!!!!!!
-    # with screen_lock:
-    #   address = surface_to_array(screen)
-    #   frame.image.copy_bits(address)
-    #   del address
-    #   if skeletons is not None and draw_skeleton:
-    #     draw_skeletons(skeletons)
-    #   pygame.display.update()
-    #!!!!!!!!!!!!!!!!!!!!!!!
 
     number_of_images_captured = IMG_NUM - IMG_NUM_INIT
 
     video = np.empty((1024, 1280, 4), np.uint8)
     frame.image.copy_bits(video.ctypes.data)
     time_difference = int(time.time()) - START_TIME
-    if skeletons is not None and draw_skeleton: #!!!!!!!!!!!!!!!!!!!!!!!
-        draw_skeletons(skeletons) #!!!!!!!!!!!!!!!!!!!!!!!!
+    if skeletons is not None and draw_skeleton:
+        draw_skeletons(skeletons)
 
-        cv2.putText(video, str(time_difference % INTERVAL), (10, 55), FONT, 2, (255,255,255), 3, cv2.CV_AA) # Puts a modulus timer on the video stream
+        cv2.putText(video, str(time_difference % INTERVAL), (10, 55), FONT, 2, (255,255,255), 3, cv2.CV_AA) # Puts a modulus timer on the video stream.
 
         if (time_difference % INTERVAL == 0) & FLAG:
             video_hold_out = np.empty((1024, 1280, 4), np.uint8)
@@ -279,7 +257,6 @@ def video_frame_ready(frame):
             video_frame = video_hold_out[:, :, 0:3]
             cv2.cvtColor(video_frame, cv2.COLOR_BGR2RGB)
             cv2.imwrite("IMAGE_DATA/" + str(IMG_NUM) + ".PNG", video_frame)
-            # cv2.imwrite(str(IMG_NUM) + ".jpg", video_frame)
 
             for index, data in enumerate(skeletons):
                 HeadPos = skeleton_to_depth_image(data.SkeletonPositions[JointId.Head], 1280, 1024)
@@ -344,7 +321,7 @@ def video_frame_ready(frame):
                     with open("_wrist_hand.txt", "ab+") as f:
                         np.savetxt(f, skeleton_buffer_wrist_hand)
                         f.write(b'\r\n')
-                    # break #un-comment for saving skeleton data for only one person.
+                    # break # un-comment this line for saving skeleton data for only one person.
 
 
 
@@ -352,32 +329,11 @@ def video_frame_ready(frame):
             FLAG = False
         if (time_difference % INTERVAL == INTERVAL - 1):
             FLAG = True
-        # print(skeletons) #!!!!!!!!!---------------
     cv2.putText(video, "IMAGES CAPTURED:" + str(number_of_images_captured), (500, 55), FONT, 2, (0, 255, 0), 3, cv2.CV_AA)
     cv2.imshow('KINECT Video Stream', video)
-    # video_frame = video[:, :, 0:3]
-    #########################################
-    # time_difference = int(time.time()) - START_TIME
-    # if (time_difference % INTERVAL == 0) & FLAG:
-    #     video_hold_out = np.empty((480, 640, 4), np.uint8)
-    #     frame.image.copy_bits(video_hold_out.ctypes.data)
 
-    #     print("SAVING_IMAGE " + str(IMG_NUM))
-
-    #     video_frame = video_hold_out[:, :, 0:3]
-    #     cv2.cvtColor(video_frame, cv2.COLOR_BGR2RGB)
-    #     cv2.imwrite("IMAGE_DATA/" + str(IMG_NUM) + ".PNG", video_frame)
-    #     # cv2.imwrite(str(IMG_NUM) + ".jpg", video_frame)
-    #     IMG_NUM += 1
-    #     FLAG = False
-    # if (time_difference % INTERVAL == INTERVAL - 2):
-    #     FLAG = True
-    #########################################
-
-
-
-if __name__ == '__main__':
-    full_screen = False
+def main():
+	full_screen = False
     draw_skeleton = True
     video_display = False
 
@@ -448,3 +404,7 @@ if __name__ == '__main__':
                 kinect.camera.elevation_angle = kinect.camera.elevation_angle - 2
             elif e.key == K_x:
                 kinect.camera.elevation_angle = 2
+
+
+if __name__ == '__main__':
+    main()

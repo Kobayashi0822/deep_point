@@ -1,3 +1,7 @@
+"""
+This script automates the process of pre-processing, resizing, and cleaning of the captured data points.
+"""
+
 import numpy as np
 import cv2
 import progressbar

@@ -5,30 +5,41 @@ import cv2
 import time
 
 bl = [] # change.
-
+image_folder_relative_path = "/home/sobits/catkin_ws/src/Deep-Point/dataset/left/images_l/"
+ew_file_path = "/home/sobits/catkin_ws/src/Deep-Point/dataset/left/elbow_l.txt"
+wh_file_path = "/home/sobits/catkin_ws/src/Deep-Point/dataset/left/wrist_l.txt"
 def file_num(file_name):
 		return int(file_name[0:-4])
 
 class BatchLoader(object):
-	def __init__(self, batch_size = 4096, num_data_points = 24084, cwd = "./", image_folder_relative = "IMAGE_DATA_2", ew_file = "_elbow_wrist.txt", wh_file = "_wrist_hand.txt", total_num_data_points = 24084, minibatch_size = 32):
-		self.l = os.listdir(cwd + image_folder_relative)
+	def __init__(self, batch_size = 4096, num_data_points = 24084, cwd = "./", image_folder_relative=image_folder_relative_path , ew_file = ew_file_path, wh_file = wh_file_path, total_num_data_points = 24084, minibatch_size = 32):
+		self.l = os.listdir(image_folder_relative)
+		# print(len(self.l))
+		# print(self.l[0])
+		# print(num_data_points)
 		# print(len(self.l), num_data_points) # checking.
-		# assert(len(self.l) == num_data_points) # UNCOMMENT AND CORRECT THIS LINE.
-		self.l.sort(key = file_num)
-		self.ew_full = np.loadtxt(ew_file)
+		assert(len(self.l) == num_data_points) # UNCOMMENT AND CORRECT THIS LINE.
+		# exit()
+		# self.l.sort(key = file_num)
+		self.ew_full = np.loadtxt(ew_file).reshape(10000,3)
+		print("self.ew_full",self.ew_full.shape)
+		# self.ew_full=self.ew_full
+		# print("self.ew_full",self.ew_full.shape)
+		# print(self.ew_full[0:5,0:3])
 		self.wh_full = np.loadtxt(wh_file)
+		# print("::",self.ew_full.shape)
 		# assert(self.ew_full.shape[0] == num_data_points) # UNCOMMENT AND CORRECT THIS LINE.
 		# assert(self.wh_full.shape[0] == num_data_points) # UNCOMMENT AND CORRECT THIS LINE.
-		assert(self.ew_full[3][1] != self.wh_full[3][1])
+		# assert(self.ew_full[3][1] != self.wh_full[3][1])
 		self.current_batch = 0
 		self.batch_size = batch_size
 		self.minibatch_size = minibatch_size
 		self.total_num_data_points = total_num_data_points
 		self.num_data_points = num_data_points
 		self.num_full_batches = self.num_data_points // self.batch_size
-		self.img_directory = cwd + image_folder_relative + "/"
-		self.img_h = 170
-		self.img_w = 213
+		self.img_directory = image_folder_relative 
+		self.img_h = 480
+		self.img_w = 640
 
 		self.epochs_passed = 0
 		# self.num_loaded_images = 0
@@ -88,17 +99,17 @@ class BatchLoader(object):
 		start, end = self.get_batch_limits()
 		m = end - start
 		X = np.empty(shape = (m, self.img_h, self.img_w, 3)) # Change last index to match number of input channels. 1 for grayscale. 3 for color.
-		assert((170, 213) == (self.img_h, self.img_w)) # Change (341, 426) according to image shape. <-- Image shape is now {(170, 213)<--[NumPy array shape]}
+		# assert((170, 213) == (self.img_h, self.img_w)) # Change (341, 426) according to image shape. <-- Image shape is now {(170, 213)<--[NumPy array shape]}
 		for i in range(start, end):
 			# if i == start:
 			# 	bl.append(self.l[start:end])
 			img_path = self.img_directory + self.l[i]
 			img = cv2.imread(img_path, cv2.IMREAD_COLOR) # Change last argument to match whether the image is color or grayscale.
-			assert(img.shape == (self.img_h, self.img_w, 3)) # Change (341, 426) according to image shape. <-- Image shape is now {(170, 213)<--[NumPy array shape]}
+			# assert(img.shape == (self.img_h, self.img_w, 3)) # Change (341, 426) according to image shape. <-- Image shape is now {(170, 213)<--[NumPy array shape]}
 			index = i - start
 			X[index, :, :, :] = img
 		y = self.ew_full[start:end, 1:7]
-		
+		# print("get_next_batch")
 		return X, y # , bl
 
 	def get_validation_batch(self, remove_stray = False):
@@ -116,22 +127,27 @@ class BatchLoader(object):
 		end = 256
 
 		m = end - start
+		print("m",m)
 		if remove_stray:
 			end = end - m % self.minibatch_size
 			m = end - start
+			print("ifm",m)
 		X = np.empty(shape = (m, self.img_h, self.img_w, 3)) # Change last index to match number of input channels. 1 for grayscale. 3 for color.
-		assert((170, 213) == (self.img_h, self.img_w)) # Change (341, 426) according to image shape. <-- Image shape is now {(170, 213)<--[NumPy array shape]}
-		assert(len(self.l) == 312)
+		print("X",X.shape)
+		# assert((170, 213) == (self.img_h, self.img_w)) # Change (341, 426) according to image shape. <-- Image shape is now {(170, 213)<--[NumPy array shape]}
+		# assert(len(self.l) == 312)
 		for i in range(start, end):
 			# if i == start:
 			# 	bl.append(self.l[start:end])
 			img_path = self.img_directory + self.l[i]
 			img = cv2.imread(img_path, cv2.IMREAD_COLOR) # Change last argument to match whether the image is color or grayscale.
-			assert(img.shape == (self.img_h, self.img_w, 3)) # Change (341, 426) according to image shape. CORRECTION AFTER MAKING COLOR IMAGES - NOW NO NEED TO CHANGE THIS LINE
+			# print(img.shape)
+			assert(img.shape == (self.img_h, self.img_w, 3)) # Change (341, 426) according to image shape.
 			index = i - start
 			X[index, :, :, :] = img
-		y = self.ew_full[start:end, 1:7] # CHANGE THIS BACK! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-		
+		y = self.ew_full[start:end, 0:3] # CHANGE THIS BACK! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+		# print(type(self.ew_full))
+		print(y.shape)
 		return X, y
 
 	# def load_entire_train_set(self):
@@ -231,13 +247,14 @@ class BatchLoader(object):
 
 def main():
 	global bl
+
 	batches = BatchLoader(batch_size = 2048,
 		minibatch_size = 8,
-		num_data_points = 22528, #modified for testing, originally 24084
+		num_data_points = 10000, #modified for testing, originally 24084
 		cwd = "./",
-		image_folder_relative = "IMAGE_DATA_2",
-		ew_file = "_elbow_wrist.txt",
-		wh_file = "_wrist_hand.txt")
+		image_folder_relative = image_folder_relative_path,
+		ew_file = ew_file_path,
+		wh_file = wh_file_path)
 	# batches.save_batches()
 	#################UNCOMMENT THIS TO CHECK###########################
 	# tick = time.time()
@@ -278,25 +295,25 @@ def main():
 	# 	assert(float(file_num(batches.l[i])) == y_val[i - batches.num_data_points][0])
 	########################################################################
 
-	batches = BatchLoader(batch_size = 16,
-		minibatch_size = 8,
-		num_data_points = 256, #modified for testing, originally 24084
-		cwd = "./",
-		image_folder_relative = "IMAGE_DATA_2",
-		ew_file = "_elbow_wrist.txt",
-		wh_file = "_wrist_hand.txt",
-		total_num_data_points = 312)
+# テストで消す?
+	# batches = BatchLoader(batch_size = 16,
+	# 	minibatch_size = 8,
+	# 	num_data_points = 256, #modified for testing, originally 24084
+	# 	cwd = "./",
+	# 	image_folder_relative = image_folder_relative_path,
+	# 	ew_file = ew_file_path,
+	# 	wh_file = wh_file_path,
+	# 	total_num_data_points = 312)
 
 	X, y = batches.get_validation_batch()
-	print(X.shape[0])
-	print(y.shape[0])
+	print("X",X.shape[0])
+	print("y",y.shape[0])
 	assert(X.shape[0] == y.shape[0])
 	assert(X.shape[0] == 256)
-	print(len(bl[0]))
-	assert(len(bl[0]) == 256)
-	for i in range(X.shape[0]):
-		f_num = file_num(bl[0][i])
-		assert(float(f_num) == y[i][0])
+	# print(len(bl[0]))
+	# for i in range(X.shape[0]):
+	# 	f_num = file_num(bl[0][i])
+	# 	assert(float(f_num) == y[i][0])
 
 if __name__ == '__main__':
 	main()

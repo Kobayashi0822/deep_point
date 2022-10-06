@@ -1,41 +1,43 @@
-from BatchLoader import *
+from batch_loader import *
 import numpy as np
 import tensorflow as tf
+from tensorflow.python.framework.ops import disable_eager_execution
+disable_eager_execution()
 import cv2
 import time
 from math import floor
 
 def variable_summaries(var):
 	"""Attach different summaries to a Tensor (for TensorBoard visualization)."""
-	
+
 	with tf.name_scope('summaries'):
 		mean = tf.reduce_mean(var)
 		tf.summary.scalar('mean', mean)
 		with tf.name_scope('stddev'):
 			stddev = tf.sqrt(tf.reduce_mean(tf.square(var - mean)))
-    	tf.summary.scalar('stddev', stddev)
-	    tf.summary.histogram('histogram', var)
+		tf.summary.scalar('stddev', stddev)
+		tf.summary.histogram('histogram', var)
 
 def log_all_var():
 	"""To attach variables to the TensorBoard summary all at once."""
-	variable_summaries(tf.get_variable('W11:0'))
-	variable_summaries(tf.get_variable('W12:0'))
-	variable_summaries(tf.get_variable('W21:0'))
-	variable_summaries(tf.get_variable('W22:0'))
-	variable_summaries(tf.get_variable('Z11_BN/gamma:0'))
-	variable_summaries(tf.get_variable('Z11_BN/beta:0'))
-	variable_summaries(tf.get_variable('Z12_BN/gamma:0'))
-	variable_summaries(tf.get_variable('Z12_BN/beta:0'))
-	variable_summaries(tf.get_variable('Z21_BN/gamma:0'))
-	variable_summaries(tf.get_variable('Z21_BN/beta:0'))
-	variable_summaries(tf.get_variable('Z22_BN/gamma:0'))
-	variable_summaries(tf.get_variable('Z22_BN/beta:0'))
-	variable_summaries(tf.get_variable('FC_1-4096/kernel:0'))
-	variable_summaries(tf.get_variable('FC_1-4096/bias:0'))
-	variable_summaries(tf.get_variable('FC_2-512/kernel:0'))
-	variable_summaries(tf.get_variable('FC_2-512/bias:0'))
-	variable_summaries(tf.get_variable('FC_3-n_y/kernel:0'))
-	variable_summaries(tf.get_variable('FC_3-n_y/bias:0'))
+	variable_summaries(tf.compat.v1.get_variable('W11:0'))
+	variable_summaries(tf.compat.v1.get_variable('W12:0'))
+	variable_summaries(tf.compat.v1.get_variable('W21:0'))
+	variable_summaries(tf.compat.v1.get_variable('W22:0'))
+	variable_summaries(tf.compat.v1.get_variable('Z11_BN/gamma:0'))
+	variable_summaries(tf.compat.v1.get_variable('Z11_BN/beta:0'))
+	variable_summaries(tf.compat.v1.get_variable('Z12_BN/gamma:0'))
+	variable_summaries(tf.compat.v1.get_variable('Z12_BN/beta:0'))
+	variable_summaries(tf.compat.v1.get_variable('Z21_BN/gamma:0'))
+	variable_summaries(tf.compat.v1.get_variable('Z21_BN/beta:0'))
+	variable_summaries(tf.compat.v1.get_variable('Z22_BN/gamma:0'))
+	variable_summaries(tf.compat.v1.get_variable('Z22_BN/beta:0'))
+	variable_summaries(tf.compat.v1.get_variable('FC_1-4096/kernel:0'))
+	variable_summaries(tf.compat.v1.get_variable('FC_1-4096/bias:0'))
+	variable_summaries(tf.compat.v1.get_variable('FC_2-512/kernel:0'))
+	variable_summaries(tf.compat.v1.get_variable('FC_2-512/bias:0'))
+	variable_summaries(tf.compat.v1.get_variable('FC_3-n_y/kernel:0'))
+	variable_summaries(tf.compat.v1.get_variable('FC_3-n_y/bias:0'))
 
 def get_placeholders(n_H0 = 170, n_W0 = 213, n_C0 = 3, n_y = 6): # Changed n_C0 to 3 (color images) (initially was 1)
 	""" 
@@ -49,8 +51,8 @@ def get_placeholders(n_H0 = 170, n_W0 = 213, n_C0 = 3, n_y = 6): # Changed n_C0 
 		X, y - Tensorflow placeholders for cnn input and labels.
 	"""
 
-	X = tf.placeholder(dtype = tf.float32, shape = [None, n_H0, n_W0, n_C0], name = "X_in")
-	y = tf.placeholder(dtype = tf.float32, shape = [None, n_y], name = "y_true")
+	X = tf.compat.v1.placeholder(dtype = tf.float32, shape = [None, n_H0, n_W0, n_C0], name = "X_in")
+	y = tf.compat.v1.placeholder(dtype = tf.float32, shape = [None, n_y], name = "y_true")
 
 	return X, y
 
@@ -73,9 +75,9 @@ def init_params(n_H0 = 170, n_W0 = 213, n_C0 = 3, n_y = 6, check = False): # Cha
 	f11 = 3	# filter_size
 	s11 = 2	# stride
 	p11 = 0	# padding
-	W11 = tf.get_variable(dtype = tf.float32,
+	W11 = tf.compat.v1.get_variable(dtype = tf.float32,
 		shape = [f11, f11, n_C0, n_C11],
-		initializer = tf.glorot_uniform_initializer(),
+		initializer = tf.compat.v1.glorot_uniform_initializer(),
 		name = "W11")
 	# variable_summaries(W11) # For tensorboard logging.
 
@@ -89,9 +91,9 @@ def init_params(n_H0 = 170, n_W0 = 213, n_C0 = 3, n_y = 6, check = False): # Cha
 	f12 = 3	# filter_size
 	s12 = 2	# stride
 	p12 = 0	# padding
-	W12 = tf.get_variable(dtype = tf.float32,
+	W12 = tf.compat.v1.get_variable(dtype = tf.float32,
 		shape = [f12, f12, n_C11, n_C12],
-		initializer = tf.glorot_uniform_initializer(),
+		initializer = tf.compat.v1.glorot_uniform_initializer(),
 		name = "W12")
 	# variable_summaries(W12) # For tensorboard logging.
 
@@ -114,9 +116,9 @@ def init_params(n_H0 = 170, n_W0 = 213, n_C0 = 3, n_y = 6, check = False): # Cha
 	f21 = 3	# filter_size
 	s21 = 1	# stride
 	p21 = 1	# padding for SAME CONV
-	W21 = tf.get_variable(dtype = tf.float32,
+	W21 = tf.compat.v1.get_variable(dtype = tf.float32,
 		shape = [f21, f21, n_C12, n_C21],
-		initializer = tf.glorot_uniform_initializer(),
+		initializer = tf.compat.v1.glorot_uniform_initializer(),
 		name = 'W21')
 	# variable_summaries(W21) # For tensorboard logging.
 	
@@ -130,9 +132,9 @@ def init_params(n_H0 = 170, n_W0 = 213, n_C0 = 3, n_y = 6, check = False): # Cha
 	f22 = 5	# filter_size
 	s22 = 1	# stride
 	p22 = 2	# padding for SAME CONV
-	W22 = tf.get_variable(dtype = tf.float32,
+	W22 = tf.compat.v1.get_variable(dtype = tf.float32,
 		shape = [f22, f22, n_C21, n_C22],
-		initializer = tf.glorot_uniform_initializer(),
+		initializer = tf.compat.v1.glorot_uniform_initializer(),
 		name = 'W22')
 	# variable_summaries(W22) # For tensorboard logging.
 	
@@ -187,6 +189,8 @@ def forward_prop(X, n_y = 6, training = False): # Use of 'training' parameter wi
 	Outputs:
 	fc3 - Network output tensor.
 	"""
+
+	
 	X_norm =  normalize_input(X)
 
 	Z11 = tf.nn.conv2d(input = X_norm,
@@ -328,4 +332,11 @@ def custom_loss(pred, y, k = 0.85): # Remember to change k to 0.85 because the u
 	z_y = ((-1 * (y1_y + k) * (z2_y - z1_y)) / (y2_y - y1_y)) + z1_y
 
 	return tf.reduce_mean(tf.add(tf.square(tf.subtract(x_p, x_y)), tf.square(tf.subtract(z_p, z_y))))
+
+def main():
+	params, hparams = init_params() # Obtain all parameters and hyperparameters in appropriate dictionaries.
+
+if __name__ == '__main__':
+    main()
+    	
 

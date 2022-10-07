@@ -190,6 +190,27 @@ def forward_prop(X, n_y = 6, training = False): # Use of 'training' parameter wi
 	fc3 - Network output tensor.
 	"""
 
+	# params, hparams = init_params() # Obtain all parameters and hyperparameters in appropriate dictionaries.
+
+	# W11 = params["W11"]
+	# W12 = params["W12"]
+	# W21 = params["W21"]
+	# W22 = params["W22"]
+
+	# """For tensorboard logging."""
+	# variable_summaries(W11)
+	# variable_summaries(W12)
+	# variable_summaries(W21)
+	# variable_summaries(W22)
+	# """------------------------"""
+
+	# s11, p11 = hparams["CONV_11"]
+	# s12, p12 = hparams["CONV_12"]
+	# f_p1, s_p1, p_p1 = hparams["POOL_1"]
+	# s21, p21 = hparams["CONV_21"]
+	# s22, p22 = hparams["CONV_22"]
+	# f_p2, s_p2, p_p2 = hparams["POOL_2"]
+
 	
 	X_norm =  normalize_input(X)
 
@@ -335,7 +356,24 @@ def custom_loss(pred, y, k = 0.85): # Remember to change k to 0.85 because the u
 
 def main():
 	params, hparams = init_params() # Obtain all parameters and hyperparameters in appropriate dictionaries.
+	W11 = params["W11"]
+	W12 = params["W12"]
+	W21 = params["W21"]
+	W22 = params["W22"]
 
+	"""For tensorboard logging."""
+	variable_summaries(W11)
+	variable_summaries(W12)
+	variable_summaries(W21)
+	variable_summaries(W22)
+	"""------------------------"""
+
+	s11, p11 = hparams["CONV_11"]
+	s12, p12 = hparams["CONV_12"]
+	f_p1, s_p1, p_p1 = hparams["POOL_1"]
+	s21, p21 = hparams["CONV_21"]
+	s22, p22 = hparams["CONV_22"]
+	f_p2, s_p2, p_p2 = hparams["POOL_2"]
 if __name__ == '__main__':
     main()
     	

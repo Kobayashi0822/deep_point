@@ -5,9 +5,9 @@ import cv2
 import time
 
 bl = [] # change.
-image_folder_relative_path = "/home/sobits/catkin_ws/src/Deep-Point/dataset/left/images_l/"
-ew_file_path = "/home/sobits/catkin_ws/src/Deep-Point/dataset/left/elbow_l.txt"
-wh_file_path = "/home/sobits/catkin_ws/src/Deep-Point/dataset/left/wrist_l.txt"
+image_folder_relative_path = "/home/sobits/catkin_ws/src/deep-point/dataset/left/images_l/"
+ew_file_path = "/home/sobits/catkin_ws/src/deep-point/dataset/left/elbow_l.txt"
+wh_file_path = "/home/sobits/catkin_ws/src/deep-point/dataset/left/wrist_l.txt"
 def file_num(file_name):
 		return int(file_name[0:-4])
 
@@ -18,6 +18,8 @@ class BatchLoader(object):
 		# print(self.l[0])
 		# print(num_data_points)
 		# print(len(self.l), num_data_points) # checking.
+		print("in BatchLoader",num_data_points)
+		print(len(self.l))
 		assert(len(self.l) == num_data_points) # UNCOMMENT AND CORRECT THIS LINE.
 		# exit()
 		# self.l.sort(key = file_num)
@@ -40,6 +42,8 @@ class BatchLoader(object):
 		self.img_directory = image_folder_relative 
 		self.img_h = 480
 		self.img_w = 640
+		# self.img_h = 170
+		# self.img_w = 213
 
 		self.epochs_passed = 0
 		# self.num_loaded_images = 0
@@ -185,12 +189,17 @@ class BatchLoader(object):
 		global bl
 
 		start = 0
-		end = self.num_data_points
-		m = end - start
-		m = 20672 # for neglecting bad training data
+		# end = self.num_data_points
+		end=100
+		print("end",end)
+		# m = end - start
+		m=100
+		print("m",m)
+		# m = 20672 # for neglecting bad training data
 		X = np.empty(shape = (m, self.img_h, self.img_w, 3)) # last index is 3 for color images. (should be 1 if grayscale)
-		y = np.empty(shape = (m, 6))
-		assert((170, 213) == (self.img_h, self.img_w)) # Change (341, 426) according to image shape. Now changed to 170, 213
+		y = np.empty(shape = (m, 3))
+		print(self.img_h,self.img_w)
+		# assert((170, 213) == (self.img_h, self.img_w)) # Change (341, 426) according to image shape. Now changed to 170, 213
 		index = 0
 		for i in range(start, end):
 			# index = i
@@ -208,16 +217,28 @@ class BatchLoader(object):
 			bl.append(self.l[i])
 			img_path = self.img_directory + self.l[i]
 			img = cv2.imread(img_path, cv2.IMREAD_COLOR) # Change last argument to match whether the image is color or grayscale.
+			print(self.img_h,self.img_w,img.shape)
 			assert(img.shape == (self.img_h, self.img_w, 3)) 
 			# index = i - start
+			
+			# cv2.imshow("test",img)
+			# cv2.waitKey(0)
+			# cv2.destroyAllWindows()
+			print("img",img.shape)
 			X[index, :, :, :] = img
-			y[index, :] = self.ew_full[i, 1:7]
+			print(index)
+			# exit()
+			# print(self.ew_full.shape)
+			# print(self.ew_full[i, 0:3])
+			# print(y.shape)
+			# print(y[index, :])
+			y[index, :] = self.ew_full[i, 0:3]
 			# X = np.append(X, np.array([img]), axis = 0)
 			# y = np.append(y, np.array([self.ew_full[i]]), axis = 0)
 			index += 1
 		# y = self.ew_full[start:end] # , 1:7]
-		assert(y.shape[0] % 64 == 0)
-		assert(X.shape[0] % 64 == 0)
+		# assert(y.shape[0] % 64 == 0)
+		# assert(X.shape[0] % 64 == 0)
 		
 		return X, y
 

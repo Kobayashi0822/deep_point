@@ -1,3 +1,4 @@
+from warnings import filters
 from batch_loader import *
 import numpy as np
 import tensorflow as tf
@@ -39,7 +40,8 @@ def log_all_var():
 	variable_summaries(tf.compat.v1.get_variable('FC_3-n_y/kernel:0'))
 	variable_summaries(tf.compat.v1.get_variable('FC_3-n_y/bias:0'))
 
-def get_placeholders(n_H0 = 170, n_W0 = 213, n_C0 = 3, n_y = 6): # Changed n_C0 to 3 (color images) (initially was 1)
+# def get_placeholders(n_H0 = 170, n_W0 = 213, n_C0 = 3, n_y = 6): # Changed n_C0 to 3 (color images) (initially was 1)
+def get_placeholders(n_H0 =480, n_W0 = 640, n_C0 = 3, n_y = 6):
 	""" 
 	Inpus (Params):
 		n_H - image height (in px) (defaults to 341)
@@ -180,7 +182,7 @@ def normalize_input(tensor):
 	"""
 	return tf.divide(tensor, 255.)
 
-def forward_prop(X, n_y = 6, training = False): # Use of 'training' parameter will be made when implementing batch_norm using the layers API.
+def forward_prop(params_dict,hparams_dict,X, n_y = 6, training = False): # Use of 'training' parameter will be made when implementing batch_norm using the layers API.
 	"""
 	Inputs (params):
 	X - The tensorflow input placeholder of appropriate shape. See docstring for 'get_placeholders'.
@@ -190,33 +192,13 @@ def forward_prop(X, n_y = 6, training = False): # Use of 'training' parameter wi
 	fc3 - Network output tensor.
 	"""
 
-	# params, hparams = init_params() # Obtain all parameters and hyperparameters in appropriate dictionaries.
-
-	# W11 = params["W11"]
-	# W12 = params["W12"]
-	# W21 = params["W21"]
-	# W22 = params["W22"]
-
-	# """For tensorboard logging."""
-	# variable_summaries(W11)
-	# variable_summaries(W12)
-	# variable_summaries(W21)
-	# variable_summaries(W22)
-	# """------------------------"""
-
-	# s11, p11 = hparams["CONV_11"]
-	# s12, p12 = hparams["CONV_12"]
-	# f_p1, s_p1, p_p1 = hparams["POOL_1"]
-	# s21, p21 = hparams["CONV_21"]
-	# s22, p22 = hparams["CONV_22"]
-	# f_p2, s_p2, p_p2 = hparams["POOL_2"]
-
 	
 	X_norm =  normalize_input(X)
+	print(params_dict["W11"])
 
 	Z11 = tf.nn.conv2d(input = X_norm,
-		filter = W11,
-		strides = [1, s11, s11, 1],
+		filters = params_dict["W11"],
+		strides = [1, hparams_dict["s11"], hparams_dict["s11"], 1],
 		padding = "VALID",
 		data_format = "NHWC",
 		name = "Z11")
@@ -234,8 +216,8 @@ def forward_prop(X, n_y = 6, training = False): # Use of 'training' parameter wi
 	# 	name = "CONV_1.1")
 
 	Z12 = tf.nn.conv2d(input = A11,
-		filter = W12,
-		strides = [1, s12, s12, 1],
+		filters = params_dict["W12"],
+		strides = [1, hparams_dict["s12"], hparams_dict["s12"], 1],
 		padding = "VALID",
 		data_format = "NHWC",
 		name = "Z12")
@@ -252,9 +234,9 @@ def forward_prop(X, n_y = 6, training = False): # Use of 'training' parameter wi
 	# 	activation = tf.nn.relu,
 	# 	name = "CONV_1.2")
 
-	P1 = tf.nn.max_pool(value = A12,
-		ksize = [1, f_p1, f_p1, 1],
-		strides = [1, s_p1, s_p1, 1],
+	P1 = tf.compat.v1.nn.max_pool(value = A12,
+		ksize = [1, hparams_dict["f_p1"], hparams_dict["f_p1"], 1],
+		strides = [1, hparams_dict["s_p1"], hparams_dict["s_p1"], 1],
 		padding = "VALID",
 		data_format = "NHWC",
 		name = "P1")
@@ -267,8 +249,8 @@ def forward_prop(X, n_y = 6, training = False): # Use of 'training' parameter wi
  	#	name = "POOL_1")
 
 	Z21 = tf.nn.conv2d(input = P1,
-		filter = W21,
-		strides = [1, s21, s21, 1],
+		filters = params_dict["W21"],
+		strides = [1, hparams_dict["s21"], hparams_dict["s21"], 1],
 		padding = "SAME",
 		data_format = "NHWC",
 		name = "Z21")
@@ -286,8 +268,8 @@ def forward_prop(X, n_y = 6, training = False): # Use of 'training' parameter wi
 	# 	name = "CONV_2.1")
 
 	Z22 = tf.nn.conv2d(input = A21,
-		filter = W22,
-		strides = [1, s22, s22, 1],
+		filters = params_dict["W22"],
+		strides = [1, hparams_dict["s22"], hparams_dict["s22"], 1],
 		padding = "SAME",
 		data_format = "NHWC",
 		name = "Z22")
@@ -304,9 +286,9 @@ def forward_prop(X, n_y = 6, training = False): # Use of 'training' parameter wi
 	# 	activation = tf.nn.relu,
 	# 	name = "CONV_2.2")
 
-	P2 = tf.nn.max_pool(value = A22,
-		ksize = [1, f_p2, f_p2, 1],
-		strides = [1, s_p2, s_p2, 1],
+	P2 = tf.compat.v1.nn.max_pool(value = A22,
+		ksize = [1, hparams_dict["f_p2"], hparams_dict["f_p2"], 1],
+		strides = [1, hparams_dict["s_p2"], hparams_dict["s_p2"], 1],
 		padding = "VALID",
 		data_format = "NHWC",
 		name = "P2")
@@ -318,24 +300,24 @@ def forward_prop(X, n_y = 6, training = False): # Use of 'training' parameter wi
  # 		data_format = 'channels_last',
  # 		name = "POOL_2")
 
-	fc_input = tf.layers.flatten(inputs = P2,
+	fc_input = tf.compat.v1.layers.flatten(inputs = P2,
 		name = "FLATTEN")
 
 	# assert(fc_input.shape[1] == 21 * 26 * 256)
 
-	fc1 = tf.layers.dense(inputs = fc_input,
+	fc1 = tf.compat.v1.layers.dense(inputs = fc_input,
 		units = 1024, # ORIGIALLY 4096, REDUCED DUE TO OOM ResourceExhaustError.
 		activation = tf.nn.relu,
 		name = "FC_1-4096")
-	fc1_drop = tf.layers.dropout(inputs = fc1, rate = 0.0, training = training, name = "fc1_drop")
+	fc1_drop = tf.compat.v1.layers.dropout(inputs = fc1, rate = 0.0, training = training, name = "fc1_drop")
 
-	fc2 = tf.layers.dense(inputs = fc1_drop,
+	fc2 = tf.compat.v1.layers.dense(inputs = fc1_drop,
 		units = 4096,
 		activation = tf.nn.relu,
 		name = "FC_2-512")
-	fc2_drop = tf.layers.dropout(inputs = fc2, rate = 0.0, training = training, name = "fc2_drop")
+	fc2_drop = tf.compat.v1.layers.dropout(inputs = fc2, rate = 0.0, training = training, name = "fc2_drop")
 
-	fc3 = tf.layers.dense(inputs = fc2_drop,
+	fc3 = tf.compat.v1.layers.dense(inputs = fc2_drop,
 		units = n_y,
 		activation = None, # activation = None implies a linear activation.
 		name = "FC_3-n_y")
@@ -353,28 +335,3 @@ def custom_loss(pred, y, k = 0.85): # Remember to change k to 0.85 because the u
 	z_y = ((-1 * (y1_y + k) * (z2_y - z1_y)) / (y2_y - y1_y)) + z1_y
 
 	return tf.reduce_mean(tf.add(tf.square(tf.subtract(x_p, x_y)), tf.square(tf.subtract(z_p, z_y))))
-
-def main():
-	params, hparams = init_params() # Obtain all parameters and hyperparameters in appropriate dictionaries.
-	W11 = params["W11"]
-	W12 = params["W12"]
-	W21 = params["W21"]
-	W22 = params["W22"]
-
-	"""For tensorboard logging."""
-	variable_summaries(W11)
-	variable_summaries(W12)
-	variable_summaries(W21)
-	variable_summaries(W22)
-	"""------------------------"""
-
-	s11, p11 = hparams["CONV_11"]
-	s12, p12 = hparams["CONV_12"]
-	f_p1, s_p1, p_p1 = hparams["POOL_1"]
-	s21, p21 = hparams["CONV_21"]
-	s22, p22 = hparams["CONV_22"]
-	f_p2, s_p2, p_p2 = hparams["POOL_2"]
-if __name__ == '__main__':
-    main()
-    	
-

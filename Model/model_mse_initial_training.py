@@ -13,6 +13,8 @@ W12 = params["W12"]
 W21 = params["W21"]
 W22 = params["W22"]
 
+# print(W11)
+
 """For tensorboard logging."""
 variable_summaries(W11)
 variable_summaries(W12)
@@ -26,6 +28,9 @@ f_p1, s_p1, p_p1 = hparams["POOL_1"]
 s21, p21 = hparams["CONV_21"]
 s22, p22 = hparams["CONV_22"]
 f_p2, s_p2, p_p2 = hparams["POOL_2"]
+
+params_dict = {"W11":W11,"W12":W12,"W21":W21,"W22":W22}
+hparams_dict = {"s11":s11, "p11":p11,"s12":s12, "p12":p12,"f_p1":f_p1, "s_p1":s_p1, "p_p1":p_p1,"s21":s21, "p21":p21,"s22":s22, "p22":p22,"f_p2":f_p2, "s_p2":s_p2, "p_p2":p_p2}
 
 def model(minibatch_size = 32, num_epochs = 8, learning_rate = 0.001, mode = "TRAIN", restore_saved_model = False, save_every_n_epochs = 1, log_folder = '1'):
 	"""
@@ -45,55 +50,58 @@ def model(minibatch_size = 32, num_epochs = 8, learning_rate = 0.001, mode = "TR
 	X, y = get_placeholders() # Include input parameters in the function call for different input dims.
 
 	if mode == "TRAIN":
-		predictions = forward_prop(X, training = True)
+		predictions = forward_prop(params_dict,hparams_dict,X, training = True)
 	elif mode == "VALIDATE":
-		predictions = forward_prop(X, training = False)
+		predictions = forward_prop(params_dict,hparams_dict,X, training = False)
 		
 	predicted_points = tf.gather(predictions, list(range(4)))
 	actual_points = tf.gather(y, list(range(4)))
 
 	# loss = custom_loss_placeholder_function()
 
-	loss = tf.losses.mean_squared_error(labels = y, predictions = predictions)
+	loss = tf.compat.v1.losses.mean_squared_error(labels = y, predictions = predictions)
 	tf.summary.scalar('mse', loss) # For tensorboard logging.
 
 	# Adding update_ops as a dependency to the optimizer for correct working of batch_normalization during training and inference
-	update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+	update_ops = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.UPDATE_OPS)
 	with tf.control_dependencies(update_ops):
-		optimizer = tf.train.AdamOptimizer(learning_rate = learning_rate).minimize(loss)
+		optimizer = tf.compat.v1.train.AdamOptimizer(learning_rate = learning_rate).minimize(loss)
 
-	init = tf.global_variables_initializer()
+	init = tf.compat.v1.global_variables_initializer()
 
 	# Saver init goes here.
-	saver = tf.train.Saver() # Check if BN works fine with this not haveing any parameters. It might be possible that the moving averages are not being saved.
-	save_path = "C:/Users/CURRENT-WORKING-DIRECTORY/SAVE_PATH_INITIAL_TRAINING/chkpts/model.ckpt" # Change this directory to wherever you want to save the training checkpoints.
-	save_path_lowest = "C:/Users/CURRENT-WORKING-DIRECTORY/SAVE_PATH_INITIAL_TRAINING/best_chkpt/model.ckpt" # This is the path where the parameters, resulting in the lowest loss yet, will be saved.
+	saver = tf.compat.v1.train.Saver() # Check if BN works fine with this not haveing any parameters. It might be possible that the moving averages are not being saved.
+	save_path = "/home/sobits/catkin_ws/src/deep-point/train_output/chkpts/model.ckpt" # Change this directory to wherever you want to save the training checkpoints.
+	save_path_lowest = "/home/sobits/catkin_ws/src/deep-point/train_output/best_chkpt/model.ckpt" # This is the path where the parameters, resulting in the lowest loss yet, will be saved.
 
 	batch_gen = BatchLoader(batch_size = 2048,
 			minibatch_size = minibatch_size,
-			num_data_points = 22528,
+			num_data_points = 10000,
 			cwd = "./",
-			image_folder_relative = "IMAGE_DATA_2",
-			ew_file = "_elbow_wrist.txt",
-			wh_file = "_wrist_hand.txt") # Batch generator initialization.
+			image_folder_relative = "/home/sobits/catkin_ws/src/deep-point/dataset/left/images_l/",
+			ew_file = "/home/sobits/catkin_ws/src/deep-point/dataset/left/elbow_l.txt",
+			wh_file = "/home/sobits/catkin_ws/src/deep-point/dataset/left/wrist_l.txt") # Batch generator initialization.
 
 	if mode == "TRAIN":
 		minibatches_processed = 0 # For tensorboard logging.
 		loss_val = 0
 		lowest_loss_yet = 0.00059
-		with tf.Session() as sess:
+		print("train")
+		with tf.compat.v1.Session() as sess:
 			if not restore_saved_model:
+				print("train2")
 				sess.run(init)
 				print("Model initialized from scratch.")
 			else:
+				print("train3")
 				saver.restore(sess, save_path) # _lowest) # Loads from lowest loss variable set.
 				print("Model restored from checkpoint.")
 
 
 			# log_all_var() # For tensorboard logging.
 
-			merged = tf.summary.merge_all()
-			train_writer = tf.summary.FileWriter('logs/' + str(log_folder) + '/train',
+			merged = tf.compat.v1.summary.merge_all()
+			train_writer = tf.compat.v1.summary.FileWriter('logs/' + str(log_folder) + '/train',
                                       sess.graph)
 
 			printed_once = False
@@ -153,7 +161,7 @@ def model(minibatch_size = 32, num_epochs = 8, learning_rate = 0.001, mode = "TR
 	if mode == "VALIDATE":
 		loss_val = 0
 		validation_batch_loss = 0
-		with tf.Session() as sess:
+		with tf.compat.v1.Session() as sess:
 			# sess.run(init)
 			# print("Model initialized from scratch.")
 			saver.restore(sess, save_path) # , save_path_lowest)
@@ -181,7 +189,7 @@ def model(minibatch_size = 32, num_epochs = 8, learning_rate = 0.001, mode = "TR
 			writer.close() # For Tensorboard
 
 def main():
-	model(minibatch_size = 16, num_epochs = 500, learning_rate = 0.0001, mode = "TRAIN", restore_saved_model = True, log_folder = '1') # Uncomment this for training, while commenting out the line below.
+	model(minibatch_size = 16, num_epochs = 500, learning_rate = 0.0001, mode = "TRAIN", restore_saved_model = False, log_folder = '1') # Uncomment this for training, while commenting out the line below.
 	# model(minibatch_size = 16, num_epochs = 8, learning_rate = 0.001, mode = "VALIDATE") # Uncomment this for validation, while commenting out the line above.
 
 if __name__ == '__main__':
